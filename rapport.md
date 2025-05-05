@@ -35,9 +35,29 @@
 
 ## 4 Étude pratique
 
+### 4.2 Implémentation
 
+```python
+def compute(self,x):
+  self.y = numpy.sqrt(numpy.sum((self.weights-x)**2))
 
+def learn(self,eta,sigma,posxjetoile,posyjetoile,x):
+  self.weights[:] = self.weights + eta * numpy.exp(-((self.posx-posxjetoile)**2+(self.posy-posyjetoile)**2)/(2*sigma**2)) * (x - self.weights)
 
+def organisation(self):
+  ratio = []
+  for posx1 in range(self.gridsize[0]):
+    for posy1 in range(self.gridsize[1]):
+      for posx2 in range(self.gridsize[0]):
+        for posy2 in range(self.gridsize[1]):
+          if(posx1 != posx2 or posy1 != posy2):
+            d = numpy.sqrt(numpy.sum((self.map[posx1][posy1].weights - self.map[posx2][posy2].weights)**2))
+            d2 = numpy.sqrt((posx1 - posx2)**2+(posy1 - posy2)**2)
+            ratio.append(d/d2)
+  return numpy.var(ratio)
+```
+
+### 4.3 Analyse de l'algorithme
 
 
 

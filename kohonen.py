@@ -44,8 +44,8 @@ class Neuron:
     @param x: entrée du neurone
     @type x: numpy array
     '''
-    # TODO
-    self.y = None
+    # DONE
+    self.y = numpy.sqrt(numpy.sum((self.weights-x)**2))
 
   def learn(self,eta,sigma,posxjetoile,posyjetoile,x):
     '''
@@ -61,9 +61,8 @@ class Neuron:
     @param x: entrée du neurone
     @type x: numpy array
     '''
-    # TODO (attention à ne pas changer la partie à gauche du =)
-    self.weights[:] = numpy.random.random(self.weights.shape)
-
+    # DONE (attention à ne pas changer la partie à gauche du =)
+    self.weights[:] = self.weights + eta * numpy.exp(-((self.posx-posxjetoile)**2+(self.posy-posyjetoile)**2)/(2*sigma**2)) * (x - self.weights)
 
 class SOM:
   ''' Classe implémentant une carte de Kohonen. '''
@@ -239,7 +238,23 @@ class SOM:
       s += numpy.min(self.activitymap)**2
     # On renvoie l'erreur de quantification vectorielle moyenne
     return s/nsamples
-
+  
+  def organisation(self):
+    '''
+    @summary: Calcul un indice en fonction de l'organisation des poids en fonction des poids et des coordonnées.
+    '''
+    # On calcule la liste du ratio entre la differance de poids et la distance entre chaque paire de neurones
+    ratio = []
+    for posx1 in range(self.gridsize[0]):
+      for posy1 in range(self.gridsize[1]):
+        for posx2 in range(self.gridsize[0]):
+          for posy2 in range(self.gridsize[1]):
+            if(posx1 != posx2 or posy1 != posy2):
+              d = numpy.sqrt(numpy.sum((self.map[posx1][posy1].weights - self.map[posx2][posy2].weights)**2))
+              d2 = numpy.sqrt((posx1 - posx2)**2+(posy1 - posy2)**2)
+              ratio.append(d/d2)
+    return numpy.var(ratio)
+  
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
   # Création d'un réseau avec une entrée (2,1) et une carte (10,10)
@@ -343,4 +358,5 @@ if __name__ == '__main__':
   network.plot()
   # Affichage de l'erreur de quantification vectorielle moyenne après apprentissage
   print("erreur de quantification vectorielle moyenne ",network.quantification(samples))
+  print("Calcul proposé a la question 3.2.3",network.organisation())
 
