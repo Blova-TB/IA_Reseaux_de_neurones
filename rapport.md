@@ -60,6 +60,16 @@ def organisation(self):
 ### 4.3 Analyse de l'algorithme
 
 
+nombre de pas de temps d’apprentissage N
+![0,05_1,4_5000.png](0,05_1,4_5000.png)
+
+taux d’apprentissage η
+largeur du voisinage σ
+taille et forme de la carte (vous pouvez tester facilement des formes ’lignes’, ’carr ́ees’ et ’rectangles’)
+jeu de donn ́ees. En particulier cr ́eez vos propres jeux de donn ́ees avec des donn ́ees non uniform ́ement
+distribu ́ees pour  ́etudier la r ́epartition des poids des neurones.
+(Bonus) la topologie de la carte (par exemple, au lieu d’utiliser une grille carr ́ee, utilisez une grille
+hexagonale), la fonction de voisinage, ..
 
 
 Formule :

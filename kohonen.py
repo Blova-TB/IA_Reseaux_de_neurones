@@ -14,6 +14,7 @@ from __future__ import division
 import numpy
 # Librairie d'affichage
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 
@@ -63,6 +64,21 @@ class Neuron:
     '''
     # DONE (attention à ne pas changer la partie à gauche du =)
     self.weights[:] = self.weights + eta * numpy.exp(-((self.posx-posxjetoile)**2+(self.posy-posyjetoile)**2)/(2*sigma**2)) * (x - self.weights)
+
+def aff_graph(X,Y,title):
+  '''
+  @summary: Affichage d'un graphique
+  @param X: abscisse
+  @type X: numpy array
+  @param Y: ordonnée
+  @type Y: numpy array
+  @param title: titre du graphique
+  @type title: string
+  '''
+  plt.figure()
+  plt.plot(X,Y)
+  plt.title(title)
+  plt.show()
 
 class SOM:
   ''' Classe implémentant une carte de Kohonen. '''
@@ -260,18 +276,20 @@ if __name__ == '__main__':
   # Création d'un réseau avec une entrée (2,1) et une carte (10,10)
   #TODO mettre à jour la taille des données d'entrée pour les données robotiques
   network = SOM((2,1),(10,10))
-  # PARAMÈTRES DU RÉSEAU
-  # Taux d'apprentissage
-  ETA = 0.05
-  # Largeur du voisinage
-  SIGMA = 1.4
-  # Nombre de pas de temps d'apprentissage
-  N = 30000
-  # Affichage interactif de l'évolution du réseau 
-  #TODO à mettre à faux pour que les simulations aillent plus vite
-  VERBOSE = True
-  # Nombre de pas de temps avant rafraissichement de l'affichage
-  NAFFICHAGE = 1000
+
+  VERBOSE = False # Affichage interactif de l'évolution du réseau 
+  NAFFICHAGE = 250 # Nombre de pas de temps avant rafraissichement de l'affichage
+  PAS_DU_TOUT_VERBOSE = True # pour ne pas afficher les autres plots
+
+  ETA = 0.05 # Taux d'apprentissage
+  SIGMA = 1.4 # Largeur du voisinage
+  N = 5000 # Nombre de pas de temps d'apprentissage
+  
+  TEST_SUR_N = True # enregistre des données pendant l'apprentissage
+  NTEST_SUR_N = 50 # Nombre de pas 
+  test_sur_n_ordonnée = []
+  test_sur_n_quantification = []
+
   # DONNÉES D'APPRENTISSAGE
   # Nombre de données à générer pour les ensembles 1, 2 et 3
   # TODO décommenter les données souhaitées
@@ -298,65 +316,84 @@ if __name__ == '__main__':
 #  l2 = 0.3
 #  samples[:,2,:] = l1*numpy.cos(samples[:,0,:])+l2*numpy.cos(samples[:,0,:]+samples[:,1,:])
 #  samples[:,3,:] = l1*numpy.sin(samples[:,0,:])+l2*numpy.sin(samples[:,0,:]+samples[:,1,:])
-  # Affichage des données (pour les ensembles 1, 2 et 3)
-  plt.figure()
-  plt.scatter(samples[:,0,0], samples[:,1,0])
-  plt.xlim(-1,1)
-  plt.ylim(-1,1)
-  plt.suptitle('Donnees apprentissage')
-  plt.show()
-  # Affichage des données (pour l'ensemble robotique)
-#  plt.figure()
-#  plt.subplot(1,2,1)
-#  plt.scatter(samples[:,0,0].flatten(),samples[:,1,0].flatten(),c='k')
-#  plt.subplot(1,2,2)
-#  plt.scatter(samples[:,2,0].flatten(),samples[:,3,0].flatten(),c='k')
-#  plt.suptitle('Donnees apprentissage')
-#  plt.show()
-    
-  # SIMULATION
-  # Affichage des poids du réseau
-  network.plot()
-  # Initialisation de l'affichage interactif
-  if VERBOSE:
-    # Création d'une figure
+  if PAS_DU_TOUT_VERBOSE == False:
+    # Affichage des données (pour les ensembles 1, 2 et 3)
     plt.figure()
-    # Mode interactif
-    plt.ion()
-    # Affichage de la figure
+    plt.scatter(samples[:,0,0], samples[:,1,0])
+    plt.xlim(-1,1)
+    plt.ylim(-1,1)
+    plt.suptitle('Donnees apprentissage')
     plt.show()
+    # Affichage des données (pour l'ensemble robotique)
+  #  plt.figure()
+  #  plt.subplot(1,2,1)
+  #  plt.scatter(samples[:,0,0].flatten(),samples[:,1,0].flatten(),c='k')
+  #  plt.subplot(1,2,2)
+  #  plt.scatter(samples[:,2,0].flatten(),samples[:,3,0].flatten(),c='k')
+  #  plt.suptitle('Donnees apprentissage')
+  #  plt.show()
+      
+    # SIMULATION
+    # Affichage des poids du réseau
+    network.plot()
+    # Initialisation de l'affichage interactif
+    if VERBOSE:
+      # Création d'une figure
+      plt.figure()
+      # Mode interactif
+      plt.ion()
+      # Affichage de la figure
+      plt.show()
+    else:
+      # Affichage de la grille initiale
+      network.scatter_plot(False)
+    # Boucle d'apprentissage
+    for i in tqdm(range(N+1)):
+      # Choix d'un exemple aléatoire pour l'entrée courante
+      index = numpy.random.randint(nsamples)
+      x = samples[index].flatten()
+      # Calcul de l'activité du réseau
+      network.compute(x)
+      # Modification des poids du réseau
+      network.learn(ETA,SIGMA,x)
+      # Mise à jour de l'affichage
+      if VERBOSE and i%NAFFICHAGE==0:
+        # Effacement du contenu de la figure
+        plt.clf()
+        # Remplissage de la figure
+        # TODO à remplacer par scatter_plot_2 pour les données robotiques
+        network.scatter_plot(True)
+        # Affichage du contenu de la figure
+        plt.pause(0.00001)
+        plt.draw()
+      if TEST_SUR_N and i%NTEST_SUR_N==0:
+        test_sur_n_ordonnée.append(i)
+        test_sur_n_quantification.append(network.quantification(samples))
+    # Fin de l'affichage interactif
+    if VERBOSE:
+      # Désactivation du mode interactif
+      plt.ioff()
+    else:
+      # Affichage de la grille finale
+      network.scatter_plot(False)
+    # Affichage des poids du réseau
+    network.plot()
+    # Affichage de l'erreur de quantification vectorielle moyenne après apprentissage
+    print("erreur de quantification vectorielle moyenne ",network.quantification(samples))
+    print("Calcul proposé a la question 3.2.3",network.organisation())
   else:
-  	# Affichage de la grille initiale
-  	network.scatter_plot(False)
-  # Boucle d'apprentissage
-  for i in range(N+1):
-    # Choix d'un exemple aléatoire pour l'entrée courante
-    index = numpy.random.randint(nsamples)
-    x = samples[index].flatten()
-    # Calcul de l'activité du réseau
-    network.compute(x)
-    # Modification des poids du réseau
-    network.learn(ETA,SIGMA,x)
-    # Mise à jour de l'affichage
-    if VERBOSE and i%NAFFICHAGE==0:
-      # Effacement du contenu de la figure
-      plt.clf()
-      # Remplissage de la figure
-      # TODO à remplacer par scatter_plot_2 pour les données robotiques
-      network.scatter_plot(True)
-      # Affichage du contenu de la figure
-      plt.pause(0.00001)
-      plt.draw()
-  # Fin de l'affichage interactif
-  if VERBOSE:
-    # Désactivation du mode interactif
-    plt.ioff()
-  else:
-  	# Affichage de la grille finale
-  	network.scatter_plot(False)
-  # Affichage des poids du réseau
-  network.plot()
-  # Affichage de l'erreur de quantification vectorielle moyenne après apprentissage
-  print("erreur de quantification vectorielle moyenne ",network.quantification(samples))
-  print("Calcul proposé a la question 3.2.3",network.organisation())
+    for i in tqdm(range(N+1)):
+      index = numpy.random.randint(nsamples)
+      x = samples[index].flatten()
+      network.compute(x)
+      network.learn(ETA,SIGMA,x)
+      if TEST_SUR_N and i%NTEST_SUR_N==0:
+        test_sur_n_ordonnée.append(i)
+        test_sur_n_quantification.append(network.quantification(samples))
+    # network.scatter_plot(False)
+
+  if TEST_SUR_N:
+    aff_graph(test_sur_n_ordonnée,test_sur_n_quantification,"Erreur de quantification vectorielle moyenne en fonction du nombre d'itérations")
+
+
 
