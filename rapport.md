@@ -223,18 +223,44 @@ Quantification :  0.004848382688749407
 Organisation :  0.0020113951933119177
 
 On peut obtenir de meilleurs résultats en allongeant encore le nombre d'itérations. Pour que cela soit vraiment utile, il faut aussi augmenter les facteurs qui multiplient eta et sigma toutes les 10 itérations. J'ai choisi de ne pas augmenter sigma autant que eta pour que les neurones se répartissent mieux.
-J'ai aussi augmenté le nombre de neurones (15*15).
+J'ai aussi augmenté le nombre de neurones (15\*15).
 
 |$\eta$|$\sigma$|$N$|$Samples$|
 |-|-|-|-|
 |1|2|6000|normale|
 
 toute les 10 iteriations :
-  eta = eta * 0.997
-  sigma = sigma * 0.996
+  eta = eta \* 0.997
+  sigma = sigma \* 0.996
 
 - ![8ter.png](img/8ter.png)
 Quantification :  0.002057100469142613
 Organisation :  0.0010605735421881865
 
-### 4.4 
+#### Conclusion du 4.3
+
+Les parametres trouvé :
+|$\eta$|$\sigma$|$N$|
+|-|-|-|
+|1 (\* 0.995 toute les 10 iterations)|2 (\* 0.995 toute les 10 iterations)|3000|
+
+fonctionne plutot bien mais dé que l'on change de jeu de données, ces parameres ne sont plus addapté. par exemple sur le dernier jeu de données (normale) je suis obligé de faire des modifications pour que les poids soit plus etalé.
+  
+Aussi, dès que l'on modifie la forme/taille de la carte, les eta et sigma choisis ne fonctionnent plus bien. Les valeurs déterminées (surtout Sigma), permettent d'éviter quasiment à coup sûr une torsade sur le graphe des poids pour une carte 10\*10:
+![9.png](img/9.png)
+Mais sur une carte plus grande (20\*20):
+![9bis.png](img/9bis.png)
+sigma n'est plus suffisant pour ce grand nombre de points.
+En augmentant Sigma de 1 (2 $\rightarrow$ 3) le resultat est bien mieux organisé
+![9ter.png](img/9ter.png)
+
+### 4.4 Bras robotique
+
+#### théorie
+
+- Une fois la carte apprise, chaque neurone fait le lien entre une position spatiale et une position motrice. Il suffit alors de trouver le neurone le plus proche de la position motrice (deux premières coordonnées) et de lire sa position spatiale (deux dernières coordonnées). De même dans l'autre sens : en trouvant le neurone le plus proche d'une position spatiale on retrouve une position moteur en lisant ses deux premières coordonnées.
+
+- En utilisant les deux premières coordonnées de poids des neurones, on peut retrouver le neurone le plus proche de $(\theta _{1},\theta _{2})$ (neurone de départ) et celui le plus proche de $(\theta'_{1},\theta'_{2})$ (neurone d'arrivée). Il ne reste plus qu'à déterminer le plus court chemin entre ces deux neurones sur la carte des neurones. On obtient alors une suite de neurones que l'on peut reporter sur le deuxième graphe de poids (deux dernières coordonnées) pour retrouver les positions spatiales de passage.
+
+#### implementation
+

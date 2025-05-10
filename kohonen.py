@@ -421,9 +421,9 @@ def main_test():
 def main_test_rapide():
 
   eta = 1 # Taux d'apprentissage
-  sigma = 2 # Largeur du voisinage
+  sigma = 3 # Largeur du voisinage
   n = 3000 # Nombre de pas de temps d'apprentissage
-  network = SOM((2,1),(10,10))
+  network = SOM((2,1),(20,20))
 
   num_samples = 1
   samples = get_samples(num_samples,affichage=True)
@@ -472,6 +472,6 @@ def main_test_nb_iter():
 if __name__ == '__main__':
   
   # main_test()
-  # main_test_rapide()
+  main_test_rapide()
   # main_test_nb_iter()
   print("FINI !")
