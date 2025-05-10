@@ -1,5 +1,7 @@
 # Intelligence Artificielle Reseaux de neurones
 
+$ \Delta w _{ij} = \eta * e^{-\frac{||j-j^{*}||^{2}_{c}}{2 \sigma ^{2}}} (x_{i} - w_{ji})$
+
 ## 3 Étude "théorique" de cas simples (7 points)
 
 ### 3.1 Influence de $\eta$
@@ -59,19 +61,180 @@ def organisation(self):
 
 ### 4.3 Analyse de l'algorithme
 
+#### les différents Samples
 
-nombre de pas de temps d’apprentissage N
-![0,05_1,4_5000.png](0,05_1,4_5000.png)
+uniforme 1:
+![sample1.png](img/sample1.png)
 
-taux d’apprentissage η
-largeur du voisinage σ
-taille et forme de la carte (vous pouvez tester facilement des formes ’lignes’, ’carr ́ees’ et ’rectangles’)
-jeu de donn ́ees. En particulier cr ́eez vos propres jeux de donn ́ees avec des donn ́ees non uniform ́ement
-distribu ́ees pour  ́etudier la r ́epartition des poids des neurones.
-(Bonus) la topologie de la carte (par exemple, au lieu d’utiliser une grille carr ́ee, utilisez une grille
-hexagonale), la fonction de voisinage, ..
+uniforme 2:
+![sample2.png](img/sample2.png)
+
+croix:
+![sample3.png](img/sample3.png)
+
+normale:
+![sample4.png](img/sample4.png)
 
 
-Formule :
+#### Test 1 : Nombre d'itérations
 
-$ \Delta w _{ij} = \eta * e^{-\frac{||j-j^{*}||^{2}_{c}}{2 \sigma ^{2}}} (x_{i} - w_{ji})$
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|0.05|1.4|$x$|uniforme 1|
+
+![1.png](img/1.png)
+Je choisie de fixer n à 3000 pour la suite.
+
+#### Test 2 : ajustement de $\eta$
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|x|1.4|3000|uniforme 1|
+
+![2.png](img/2.png)
+![2bis.png](img/2bis.png)
+La quantification diminue jusqu'à eta = 0.15, elle commence ensuite à réaugmenter.
+
+#### Test 3 : ajustement de $\sigma$
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|0.15|x|3000|uniforme 1|
+
+![3.png](img/3.png)
+![3bis.png](img/3bis.png)
+Pour obtenir la meilleur quantification vectoriel, sigma devrais se situer vers 0.65. Mais l'organisation ne vas pas etre bonne et on vas obtenir des reseaux comme cela :
+![3ter.png](img/3ter.png)
+plus sigma augmente, plus les neurones seront resserrés. Cela vas permetre d'eviter les torsades comme ci-dessus mais cela vas en meme temps empecher les neuronnes de se raprocher des bords. La quantification Vectoriel sera alors moins bonne. Exemple de sigma trop haut :
+![3quater.png](img/3quater.png)
+Il pourrait etre interessant de faire diminuer $\sigma$ au file des iterations et en partant d'un $\sigma$ elevé qui nous assure une bonne organisation. par exemple en multipliant par 0.995 $\sigma$ toute les 10 iterations.
+
+J'ajoute cela :
+
+```python
+if i%10==0:
+      sigma = sigma * 0.995
+```
+
+Je regenere donc le graphique :
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|0.15|x|3000|uniforme 1|
+
+![3quinquies.png](img/3quinquies.png)
+Avec un $\sigma$ initial = 2 on obtient une tres bonne Quatification Vectoriel tout en gardant une bonne organisation.
+
+#### Test 4 : Correction du $\eta$
+
+Je refais varier $\eta$ avec $\sigma$ = 2 (et toujours avec la décroissance progressive de sigma)
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|x|2|3000|uniforme 1|
+
+![4.png](img/4.png)
+En diminuant peu à peu le $\eta$, les poids devraient se placer plus vite au début et se positionner avec plus de précision et moins d'aléatoire à la fin.
+J'ai donc fait comme pour le $\sigma$ :
+
+```python
+if i%10==0:
+      sigma = sigma * 0.995
+      eta = eta * 0.995
+```
+
+Le test est concluant : nous avons de meilleurs résultats avec un $\eta$ initial de 1 qui décroît jusqu'à atteindre 0.22 à la 3000ème itération :
+![4bis.png](img/4bis.png)
+
+#### Test 5
+
+Regardons à nouveau l'impact du nombre d'itérations après toutes ces modifications :
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|1|2|x|uniforme 1|
+
+![5.png](img/5.png)
+
+Exemple pour n = 5000 :
+![5ter.png](img/5ter.png)
+
+Exemple pour n = 3000 :
+![5bis.png](img/5bis.png)
+
+Au-delà de 3000, les graph précedant montre que l'organisation commence à se détériorer lentement.
+
+#### Test sur Samples uniforme 2
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|1|2|3000|uniforme 2|
+
+deux possibilitées :
+
+- ![6.png](img/6.png)
+Quantification :  0.003294567980761774
+Organisation :  0.004203590053562094
+
+- ![6bis.png](img/6bis.png)
+Quantification :  0.003283026557254699
+Organisation :  0.005158991097011461
+
+J'essais de modifier la forme de la carte : Rectangle (20*5)
+
+- ![6ter.png](img/6ter.png)
+Quantification :  0.003332281359420258
+Organisation :  0.0017129187498005271
+
+#### Test sur Samples croix
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|1|2|3000|croix|
+
+- ![7.png](img/7.png)
+Quantification :  0.005493320636807738
+Organisation :  0.0017998575345922285
+
+J'essais de modifier la forme de la carte : carré (20*20)
+
+- ![7bis.png](img/7bis.png)
+Quantification :  0.0011163258598912015
+Organisation :  0.0004980471127643873
+
+#### Test sur Samples normale
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|1|2|3000|normale|
+
+- ![8.png](img/8.png)
+Quantification :  0.0068246084992035745
+Organisation :  0.0015582771749716045
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|1|2|5000|normale|
+
+En donnant plus d'itérations, les neurones pourront s'étaler un peu plus sur l'extérieur de la carte.
+
+- ![8bis.png](img/8bis.png)
+Quantification :  0.004848382688749407
+Organisation :  0.0020113951933119177
+
+On peut obtenir de meilleurs résultats en allongeant encore le nombre d'itérations. Pour que cela soit vraiment utile, il faut aussi augmenter les facteurs qui multiplient eta et sigma toutes les 10 itérations. J'ai choisi de ne pas augmenter sigma autant que eta pour que les neurones se répartissent mieux.
+J'ai aussi augmenté le nombre de neurones (15*15).
+
+|$\eta$|$\sigma$|$N$|$Samples$|
+|-|-|-|-|
+|1|2|6000|normale|
+
+toute les 10 iteriations :
+  eta = eta * 0.997
+  sigma = sigma * 0.996
+
+- ![8ter.png](img/8ter.png)
+Quantification :  0.002057100469142613
+Organisation :  0.0010605735421881865
+
+### 4.4 
