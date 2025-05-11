@@ -169,7 +169,8 @@ class SOM:
     '''
     # Création de la figure
     if not interactive:
-      plt.figure()
+      plt.figure(figsize=(16,11))
+
     # Affichage des 2 premières dimensions dans le plan
     plt.subplot(1,2,1)
     # Récupération des poids
@@ -221,6 +222,34 @@ class SOM:
     plt.suptitle('Poids dans l\'espace de la carte')
     # Affichage de la figure
     plt.show()
+
+  def motrice_to_spacial(self,x):
+    best_dist = 10000
+    best_i = -1
+    best_j = -1
+    for i in range(self.gridsize[0]):
+      for j in range(self.gridsize[1]):
+        # distance sur les deux premieres coordonnées
+        dist = (self.map[i][j].weights[0]-x[0])**2+(self.map[i][j].weights[1]-x[1])**2
+        if dist < best_dist:
+          best_dist = dist
+          best_i = i
+          best_j = j
+    return (self.map[best_i][best_j].weights[2],self.map[best_i][best_j].weights[3]),(best_i,best_j)
+  
+  def spacial_to_motrice(self,x):
+    best_dist = 10000
+    best_i = -1
+    best_j = -1
+    for i in range(self.gridsize[0]):
+      for j in range(self.gridsize[1]):
+        # distance sur les deux premieres coordonnées
+        dist = (self.map[i][j].weights[2]-x[0])**2+(self.map[i][j].weights[3]-x[1])**2
+        if dist < best_dist:
+          best_dist = dist
+          best_i = i
+          best_j = j
+    return (self.map[best_i][best_j].weights[0],self.map[best_i][best_j].weights[1]),(best_i,best_j)
 
   def quantification(self,X):
     '''
@@ -317,7 +346,6 @@ def run_kohonen_2D(eta,sigma,N,samples,affichage=False,network=None):
   if affichage:
     plt.ion()
   for i in range(N+1):
-
     if i%10==0:
       eta = eta * 0.995
       sigma = sigma * 0.995
@@ -338,6 +366,35 @@ def run_kohonen_2D(eta,sigma,N,samples,affichage=False,network=None):
     network.scatter_plot(False)
     plt.draw()
   return network.quantification(samples),network.organisation()
+
+def run_kohonen_4D(eta,sigma,N,samples,affichage=False,network=None,eta_mult=0,sigma_mult=0,sigma_min=0):
+  plt.figure(figsize=(16,11))
+  if network is None:
+    network = SOM((4,1),(25,25))
+  nsamples = samples.shape[0]
+  if affichage:
+    plt.ion()
+  for i in range(N+1):
+
+    if i%10==0:
+      if eta_mult != 0:
+        eta = eta * eta_mult
+      if sigma_mult != 0 and sigma > sigma_min:
+        sigma = sigma * sigma_mult
+    index = numpy.random.randint(nsamples)
+    x = samples[index].flatten()
+    network.compute(x)
+    network.learn(eta,sigma,x)
+    if i%100==0 and affichage:
+      plt.clf()
+      network.scatter_plot_2(True)
+      plt.pause(0.00001)
+      plt.draw()
+  if affichage:
+    plt.close()
+    plt.ioff()
+    network.scatter_plot_2(False)
+  return network
 
 def get_samples(num_samples,affichage=False):
   nsamples = 1200
@@ -395,6 +452,63 @@ def get_samples(num_samples,affichage=False):
 
   return samples
 
+def chemin_2D(depart,arrivee):
+  chemin_2D = []
+  
+  delta_x = arrivee[0] - depart[0]
+  delta_y = arrivee[1] - depart[1]
+  deplacement_x = delta_x/abs(delta_x)
+  deplacement_y = delta_y/abs(delta_y)
+  nb_deplacements = abs(delta_x) + abs(delta_y)
+  avancement_x = 1.0
+  avancement_y = 1.0
+
+  pos_x = depart[0]
+  pos_y = depart[1]
+  
+  chemin_2D.append([int(pos_x),int(pos_y)])
+  for i in range(nb_deplacements):
+    if avancement_x > avancement_y:
+      pos_x += deplacement_x
+      avancement_x -= 1/abs(delta_x)
+    else:
+      pos_y += deplacement_y
+      avancement_y -= 1/abs(delta_y)
+    chemin_2D.append([int(pos_x),int(pos_y)])
+  return chemin_2D
+
+def chemin_bras_robot(network:SOM,depart,arrivee):
+  _,depart = network.motrice_to_spacial(depart)
+  _,arrivee = network.motrice_to_spacial(arrivee)
+  chemin = chemin_2D(depart,arrivee)
+  chemin_4D = []
+  for i in range(len(chemin)):
+    chemin_4D.append(network.map[chemin[i][0]][chemin[i][1]].weights)
+  
+  chemin_4D = numpy.array(chemin_4D)
+
+  plt.figure(figsize=(16, 11))
+
+  plt.subplot(1, 2, 1)
+  plt.scatter(chemin_4D[:, 0], chemin_4D[:, 1], c='r', label='Chemin position motrice')
+  plt.plot(chemin_4D[:, 0], chemin_4D[:, 1], 'r-', linewidth=1)
+  plt.xlim(0, 3.15)
+  plt.ylim(0, 3.15)
+  plt.xlabel("Dimension 1")
+  plt.ylabel("Dimension 2")
+
+  plt.subplot(1, 2, 2)
+  plt.scatter(chemin_4D[:, 2], chemin_4D[:, 3], c='r', label='Chemin position spacial')
+  plt.plot(chemin_4D[:, 2], chemin_4D[:, 3], 'r-', linewidth=1)
+  plt.xlim(-1, 1)
+  plt.ylim(-0.2, 1)
+  plt.xlabel("Dimension 3")
+  plt.ylabel("Dimension 4")
+
+  # Affichage de la figure
+  plt.suptitle("Chemin dans l'espace d'entrée")
+  plt.show()
+
 # -----------------------------------------------------------------------------
 
 def main_test():
@@ -421,9 +535,9 @@ def main_test():
 def main_test_rapide():
 
   eta = 1 # Taux d'apprentissage
-  sigma = 3 # Largeur du voisinage
+  sigma = 2 # Largeur du voisinage
   n = 3000 # Nombre de pas de temps d'apprentissage
-  network = SOM((2,1),(20,20))
+  network = SOM((2,1),(10,10))
 
   num_samples = 1
   samples = get_samples(num_samples,affichage=True)
@@ -438,7 +552,7 @@ def main_test_nb_iter():
   num_samples = 1
   affichage = False
 
-  if True:
+  if True: # Pour pouvoir replier le code sur VScode XD
     samples = get_samples(num_samples,affichage=affichage)
     network = SOM((2,1),(10,10))
     nsamples = samples.shape[0]
@@ -469,9 +583,28 @@ def main_test_nb_iter():
   print("Quantification : ",network.quantification(samples))
   print("Organisation : ",network.organisation())
 
+def main_bras_robotique():
+  eta = 0.4 # Taux d'apprentissage
+  sigma = 4.5 # Largeur du voisinage
+  n = 15000 # Nombre de pas de temps d'apprentissage
+  eta_mult = 0.997
+  sigma_mult = 0.9985
+  sigma_min = 1.8
+  num_samples = 9
+  samples = get_samples(num_samples,affichage=False)
+  network = run_kohonen_4D(eta,sigma,n,samples,affichage=True,eta_mult=eta_mult,sigma_mult=sigma_mult,sigma_min=sigma_min)
+
+  # Choix des angles de départ et d'arrivée
+  depart = (0,0)
+  arrivee = (3.14,3.14)
+
+  # Calcul du chemin
+  chemin_bras_robot(network,depart,arrivee)
+
 if __name__ == '__main__':
   
-  # main_test()
-  main_test_rapide()
-  # main_test_nb_iter()
+  # main_test() # pour genérer les graphes
+  # main_test_rapide() # pour un test rapide avec un affichage
+  # main_test_nb_iter() # pour genérer les graphes en fonction du nombre d'itérations (en une seule execution)
+  # main_bras_robotique() # pour la derniere partie avec le bras robotique
   print("FINI !")

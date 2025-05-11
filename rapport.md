@@ -75,7 +75,6 @@ croix:
 normale:
 ![sample4.png](img/sample4.png)
 
-
 #### Test 1 : Nombre d'itérations
 
 |$\eta$|$\sigma$|$N$|$Samples$|
@@ -116,7 +115,7 @@ if i%10==0:
       sigma = sigma * 0.995
 ```
 
-Je regenere donc le graphique :
+Je régénére donc le graphique :
 
 |$\eta$|$\sigma$|$N$|$Samples$|
 |-|-|-|-|
@@ -263,4 +262,47 @@ En augmentant Sigma de 1 (2 $\rightarrow$ 3) le resultat est bien mieux organis�
 - En utilisant les deux premières coordonnées de poids des neurones, on peut retrouver le neurone le plus proche de $(\theta _{1},\theta _{2})$ (neurone de départ) et celui le plus proche de $(\theta'_{1},\theta'_{2})$ (neurone d'arrivée). Il ne reste plus qu'à déterminer le plus court chemin entre ces deux neurones sur la carte des neurones. On obtient alors une suite de neurones que l'on peut reporter sur le deuxième graphe de poids (deux dernières coordonnées) pour retrouver les positions spatiales de passage.
 
 #### implementation
+
+```python
+def motrice_to_spacial(self,x):
+    best_dist = 10000
+    best_i = -1
+    best_j = -1
+    for i in range(self.gridsize[0]):
+      for j in range(self.gridsize[1]):
+        dist = (self.map[i][j].weights[0]-x[0])**2+(self.map[i][j].weights[1]-x[1])**2
+        if dist < best_dist:
+          best_dist = dist
+          best_i = i
+          best_j = j
+    return self.map[best_i][best_j].weights[2],self.map[best_i][best_j].weights[3]
+  
+  def spacial_to_motrice(self,x):
+    best_dist = 10000
+    best_i = -1
+    best_j = -1
+    for i in range(self.gridsize[0]):
+      for j in range(self.gridsize[1]):
+        dist = (self.map[i][j].weights[2]-x[0])**2+(self.map[i][j].weights[3]-x[1])**2
+        if dist < best_dist:
+          best_dist = dist
+          best_i = i
+          best_j = j
+    return self.map[best_i][best_j].weights[0],self.map[best_i][best_j].weights[1]
+```
+
+Carte apprise avec une carte de 15*15
+
+|$\eta$|$\sigma$|$N$|
+|-|-|-|
+|0.3 (\* 0.997 toute les 10 iterations)|3.8 (\* 0.9985 toutes les 10 itérations jusqu'à ce qu'il atteigne 1.8)|3000|
+
+![10_0.png](img/10_0.png)
+
+chemin entre (0,0) et (3.14,3.14)
+![10_1.png](img/10_1.png)
+
+avec une carte de 25*25
+![10_2.png](img/10_2.png)
+![10_3.png](img/10_3.png)
 
